@@ -1,0 +1,11 @@
+{
+  "name": "octocorp",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "dotenv": "^16.x.x",
+    "express": "^5.2.1",
+    "mariadb": "^3.x.x",
+    "sequelize": "^6.x.x"
+  }
+}

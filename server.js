@@ -1,17 +1,18 @@
 import { Sequelize, DataTypes } from 'sequelize';
+import express from 'express';
 
 // .env Connection Data
-require('dotenv').config()
+import 'dotenv/config';
 
 /**
  * 1. Database Configuration
  */
-const sequelize = new Sequelize(process.env.DB, process.env.DB_USER, process.env.DB_PWD, {
+const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PWD, {
   host: process.env.DB_HOST,
   dialect: 'mariadb',
   logging: false,
   pool: {
-    max: parseInt(process.env.DB_LIMIT) | 5,  // Maximum number of connection in pool
+    max: parseInt(process.env.DB_LIMIT) || 5, // Maximum number of connection in pool
     min: 0,                                   // Minimum number of connection in pool
     acquire: 30000,                           // Maximum time (ms) that pool will try to get connection before throwing error
     idle: 10000                               // Maximum time (ms) that a connection can be idle before being released
@@ -186,3 +187,173 @@ ChannelMessage.belongsToMany(User, {
 /**
  * 4. Main Execution Function
  */
+const app = express();
+app.use(express.json());
+
+/**
+ * 4. API Routes
+ */
+
+// --- USER ROUTES ---
+
+// Create a new user (Registration)
+app.post('/api/users', async (req, res) => {
+  try {
+    const { username, email, password_hash } = req.body;
+    const user = await User.create({ username, email, password_hash });
+    res.status(201).json(user);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Get all users
+app.get('/api/users', async (req, res) => {
+  try {
+    const users = await User.findAll({
+      attributes: ['id', 'username', 'email', 'created_at'] // Hiding password fields for safety
+    });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// --- CHANNEL ROUTES ---
+
+// Create a channel (Linking an Owner)
+app.post('/api/channels', async (req, res) => {
+  try {
+    const { title, owner_id } = req.body;
+    const channel = await Channel.create({ title, owner_id });
+    res.status(201).json(channel);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Get all channels including their Owner's info
+app.get('/api/channels', async (req, res) => {
+  try {
+    const channels = await Channel.findAll({
+      include: [{ model: User, as: 'Owner', attributes: ['username', 'email'] }]
+    });
+    res.json(channels);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// --- MESSAGE ROUTES ---
+
+// Post a message to a channel
+app.post('/api/channels/:channelId/messages', async (req, res) => {
+  try {
+    const { content, sender_id } = req.body;
+    const message = await ChannelMessage.create({
+      content,
+      sender_id,
+      channel_id: req.params.channelId
+    });
+    res.status(201).json(message);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Get messages for a channel with Sender details
+app.get('/api/channels/:channelId/messages', async (req, res) => {
+  try {
+    const messages = await ChannelMessage.findAll({
+      where: { channel_id: req.params.channelId },
+      include: [{ model: User, as: 'Sender', attributes: ['username'] }],
+      order: [['timestamp', 'ASC']]
+    });
+    res.json(messages);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * 5. Server Initialization
+ */
+const PORT = process.env.PORT || 3000;
+
+async function demonstrateOwnership() {
+  try {
+    // 1. Create the User (The future Owner)
+    const creator = await User.create({
+      username: 'AliceDev',
+      email: 'alice@octocorp.com',
+      password_hash: 'hashed_password_here'
+    });
+
+    // 2. Create the Channel and assign Alice as the Owner
+    const newChannel = await Channel.create({
+      title: 'internship-projects',
+      owner_id: creator.id // Using the ID from the user we just created
+    });
+
+    console.log(`✅ Channel "${newChannel.title}" created with Owner: ${creator.username}`);
+
+    // 3. Fetch the Channel and "Eager Load" the Owner's details
+    const channelWithInfo = await Channel.findOne({
+      where: { title: 'internship-projects' },
+      include: [{ 
+        model: User, 
+        as: 'Owner', 
+        attributes: ['username', 'email'] // Don't fetch the password!
+      }]
+    });
+
+    // Displaying the result
+    console.log('--- Channel Ownership Data ---');
+    console.log({
+      ChannelName: channelWithInfo.title,
+      OwnedBy: channelWithInfo.Owner.username,
+      OwnerContact: channelWithInfo.Owner.email
+    });
+
+  } catch (error) {
+    console.error('❌ Error in ownership example:', error);
+  }
+}
+
+async function resetDatabase() {
+  try {
+    // force: true DROPS the tables and RECREATES them
+    await sequelize.sync({ force: true });
+    console.log('⚠️ Database dropped and recreated successfully.');
+  } catch (error) {
+    console.error('❌ Failed to reset database:', error);
+  }
+}
+
+async function startServer() {
+  try {
+    // Authenticate connection
+    await sequelize.authenticate();
+    console.log('✅ Connection to MariaDB has been established successfully.');
+
+    // Sync models (use { alter: true } in dev to update tables without losing data)
+    await sequelize.sync({ alter: true });
+    console.log('✅ Database models synchronized.');
+
+    app.get('/', (req, res) => {
+      res.send('<h1>OctoCorp API is Live!</h1><p>Try visiting /api/channels to see data.</p>');
+    });
+
+    await resetDatabase();
+
+    // await demonstrateOwnership();
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Server is running on http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error('❌ Unable to start the server:', error);
+  }
+}
+
+startServer();
