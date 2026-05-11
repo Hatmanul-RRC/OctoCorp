@@ -102,7 +102,7 @@ const DirectMessage = sequelize.define('DirectMessage', {
     type: DataTypes.DATE, 
     defaultValue: DataTypes.NOW 
   },
-  last_seen: {
+  seen_at: {
     type: DataTypes.DATE
   }
 });
@@ -123,18 +123,65 @@ const ChannelMessage = sequelize.define('ChannelMessage', {
   }
 });
 
+const ChannelMessageSeen = sequelize.define('ChannelMessageSeen', {
+  id: { 
+    type: DataTypes.UUID, 
+    defaultValue: DataTypes.UUIDV4, 
+    primaryKey: true 
+  },
+  seen_at: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
+  }
+});
+
 /**
  * 3. Relatii (Asocieri)
  */
-User.belongsToMany(Role, { through: 'UserRoles' });
-Role.belongsToMany(User, { through: 'UserRoles' });
+// --- USER & ROLES ---
+// Many-to-Many: "poseda" / "atribuit_prin"
+User.belongsToMany(Role, { through: 'UserRoles', foreignKey: 'user_id' });
+Role.belongsToMany(User, { through: 'UserRoles', foreignKey: 'role_id' });
 
+// --- DIRECT MESSAGES ---
+// One-to-Many: "expediaza" / "primeste"
 User.hasMany(DirectMessage, { as: 'SentMessages', foreignKey: 'sender_id' });
-User.hasMany(DirectMessage, { as: 'ReceivedMessages', foreignKey: 'recipient_id' });
+DirectMessage.belongsTo(User, { as: 'Sender', foreignKey: 'sender_id' });
 
+User.hasMany(DirectMessage, { as: 'ReceivedMessages', foreignKey: 'recipient_id' });
+DirectMessage.belongsTo(User, { as: 'Recipient', foreignKey: 'recipient_id' });
+
+// --- CHANNELS & ROLES ---
+// Many-to-Many: "autorizeaza" / "permite_acces_la" 
+Channel.belongsToMany(Role, { through: 'ChannelRoles', foreignKey: 'channel_id' });
+Role.belongsToMany(Channel, { through: 'ChannelRoles', foreignKey: 'role_id' });
+
+// One-to-Many: "gestioneaza" (Owner)
+User.hasMany(Channel, { foreignKey: 'owner_id' });
 Channel.belongsTo(User, { as: 'Owner', foreignKey: 'owner_id' });
+
+// --- CHANNEL MESSAGES ---
+// One-to-Many: "gazduieste"
 Channel.hasMany(ChannelMessage, { foreignKey: 'channel_id' });
-ChannelMessage.belongsTo(User, { foreignKey: 'sender_id' });
+ChannelMessage.belongsTo(Channel, { foreignKey: 'channel_id' });
+
+// One-to-Many: "trimite"
+User.hasMany(ChannelMessage, { foreignKey: 'sender_id' });
+ChannelMessage.belongsTo(User, { as: 'Sender', foreignKey: 'sender_id' });
+
+// --- MESSAGE SEEN STATUS (Read Receipts) ---
+// Many-to-Many: "vizualizeaza" / "marcat_ca"
+// This connects Users to the messages they have read in a channel
+User.belongsToMany(ChannelMessage, { 
+  through: ChannelMessageSeen, 
+  foreignKey: 'user_id',
+  otherKey: 'message_id' 
+});
+ChannelMessage.belongsToMany(User, { 
+  through: ChannelMessageSeen, 
+  foreignKey: 'message_id',
+  otherKey: 'user_id'
+});
 
 /**
  * 4. Main Execution Function
