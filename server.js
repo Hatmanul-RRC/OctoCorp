@@ -344,8 +344,7 @@ async function startServer() {
       res.send('<h1>OctoCorp API is Live!</h1><p>Try visiting /api/channels to see data.</p>');
     });
 
-    await resetDatabase();
-
+    // await resetDatabase();
     // await demonstrateOwnership();
 
     app.listen(PORT, () => {
