@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>P2P File Share</title>
+  <style>
+    body { font-family: sans-serif; max-width: 480px; margin: 60px auto; padding: 0 20px; }
+    input[type="text"] { padding: 8px; width: 200px; border: 1px solid #ccc; border-radius: 4px; }
+    button { padding: 8px 16px; margin-left: 6px; cursor: pointer; }
+    #transfer { display: none; margin-top: 30px; }
+    progress { width: 100%; height: 10px; margin-top: 10px; }
+    #status { margin-top: 12px; color: #555; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h2>P2P File Share</h2>
+
+  <div id="joinSection">
+    <input id="roomInput" type="text" placeholder="Enter room code" />
+    <button id="joinBtn">Join</button>
+  </div>
+
+  <div id="transfer">
+    <input type="file" id="fileInput" />
+    <button id="sendBtn" disabled>Send File</button>
+    <progress id="progress" value="0" max="100"></progress>
+    <p id="status">Waiting for peer...</p>
+  </div>
+
+  <script type="module">
+    import { joinRoom, sendFile, on } from '/webrtc.js';
+
+    const $ = id => document.getElementById(id);
+
+    // ── Hook up WebRTC events to UI ──────────────────────────────
+    on.connected = () => {
+      $('status').textContent = 'Connected! Pick a file and hit Send.';
+      $('sendBtn').disabled = false;
+    };
+
+    on.peerLeft = () => {
+      $('status').textContent = 'Peer disconnected.';
+      $('sendBtn').disabled = true;
+    };
+
+    on.progress = (percent) => {
+      $('progress').value = percent;
+    };
+
+    on.fileReceived = (blob, filename) => {
+      // Auto-download the file
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      $('status').textContent = `✓ Downloaded: ${filename}`;
+    };
+
+    on.error = (msg) => {
+      $('status').textContent = `Error: ${msg}`;
+    };
+
+    // ── UI interactions ──────────────────────────────────────────
+    $('joinBtn').onclick = () => {
+      const room = $('roomInput').value.trim();
+      if (!room) return alert('Enter a room code');
+      $('joinSection').style.display = 'none';
+      $('transfer').style.display = 'block';
+      joinRoom(room);
+    };
+
+    $('sendBtn').onclick = () => {
+      const file = $('fileInput').files[0];
+      if (!file) return alert('Pick a file first');
+      $('status').textContent = 'Sending...';
+      $('sendBtn').disabled = true;
+      sendFile(file).then(() => {
+        $('status').textContent = '✓ File sent!';
+        $('sendBtn').disabled = false;
+      });
+    };
+  </script>
+</body>
+</html>
