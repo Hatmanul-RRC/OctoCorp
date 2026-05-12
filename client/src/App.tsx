@@ -4,14 +4,16 @@ import { Header } from './components/Header';
 import { ChatView } from './components/ChatView';
 import { LoginView } from './components/LoginView';
 import { ChannelsView } from './components/ChannelsView';
+import { FilesView } from './components/FilesView'; // <--- Pasul 1: Importăm noua componentă
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [activeTab, setActiveTab] = useState<'Chat' | 'Canale'>('Chat');
+  // Pasul 2: Extindem tipul activeTab pentru a accepta și 'Fisiere'
+  const [activeTab, setActiveTab] = useState<'Chat' | 'Canale' | 'Fisiere'>('Chat');
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [selectedContact, setSelectedContact] = useState('Agent Alpha');
   const [selectedChannel, setSelectedChannel] = useState('# general');
-
+  const [lastContext, setLastContext] = useState<'Chat' | 'Canale'>('Chat');
   const handleLogin = (username: string) => {
     const roles = username.toLowerCase() === 'admin' ? ['Admin'] : ['Membru'];
     const user = { username, roles };
@@ -37,9 +39,6 @@ function App() {
       margin: 0,
       padding: 0
     }}>
-      {/* MODIFICARE: Injectăm un stil CSS scurt pentru a ascunde bara de scroll 
-        și a asigura spațierea corectă a mesajelor.
-      */}
       <style>
         {`
           .no-scrollbar::-webkit-scrollbar {
@@ -48,12 +47,12 @@ function App() {
           .no-scrollbar {
             -ms-overflow-style: none;
             scrollbar-width: none;
-            padding-right: 40px !important; /* Împinge mesajele din dreapta mai la stânga */
+            padding-right: 40px !important;
           }
         `}
       </style>
       
-      {/* 1. Sidebar */}
+      {/* 1. Sidebar - Rămâne neschimbat ca structură, doar primește noul activeTab */}
       <div style={{
         width: '260px',
         height: '100%',
@@ -63,7 +62,12 @@ function App() {
       }}>
         <Sidebar 
           activeTab={activeTab} 
-          onTabChange={setActiveTab} 
+          onTabChange={(tab) => {
+            if (tab === 'Chat' || tab === 'Canale') {
+              setLastContext(tab);
+            }
+            setActiveTab(tab);
+          }} 
           userRoles={currentUser.roles}
           onSelectContact={setSelectedContact}
           selectedContact={selectedContact}
@@ -88,17 +92,24 @@ function App() {
           overflow: 'hidden',
           position: 'relative',
         }}>
-          {activeTab === 'Chat' ? (
-            /* MODIFICARE: ChatView va sta într-un container care aplică 
-               clasa "no-scrollbar" definită mai sus.
-            */
+          {/* LOGICA DE AFISARE REZOLVATĂ: Am adăugat a treia condiție */}
+          {activeTab === 'Chat' && (
             <div className="no-scrollbar" style={{ height: '100%', overflowY: 'auto' }}>
                 <ChatView selectedContact={selectedContact} />
             </div>
-          ) : (
+          )}
+
+          {activeTab === 'Canale' && (
             <div className="no-scrollbar" style={{ height: '100%', overflowY: 'auto' }}>
               <ChannelsView selectedChannel={selectedChannel} />
             </div>
+          )}
+
+          {activeTab === 'Fisiere' && (
+            /* Determinăm sursa numelui în funcție de ultimul context (Contact sau Canal) */
+            <FilesView 
+               sourceName={lastContext === 'Chat' ? selectedContact : selectedChannel} 
+            />
           )}
         </main>
       </div>
