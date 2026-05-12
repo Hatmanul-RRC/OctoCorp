@@ -15,24 +15,33 @@ export const FilesView = ({ sourceName }: FilesViewProps) => {
     }}>
       {/* Header Secțiune Fișiere */}
       <div style={{
-        padding: '20px 40px',
-        backgroundColor: '#4c1d95', // Indigo închis
-        color: 'white',
+        padding: '25px 40px',
+        background: 'linear-gradient(90deg, #4c1d95 0%, #6d28d9 100%)', // Gradient violet
+        color: 'white', // Textul principal devine alb
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        boxShadow: '0 4px 12px rgba(76, 29, 149, 0.2)'
-      }}>
+    }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', letterSpacing: '0.5px' }}>
-            DOCUMENTE SECURIZATE
-          </h1>
-          <p style={{ margin: '4px 0 0 0', fontSize: '12px', opacity: 0.8 }}>
-            Sursă: <span style={{ fontWeight: '600', color: '#c4b5fd' }}>{sourceName}</span>
-          </p>
+            <h1 style={{ 
+            margin: 0, 
+            fontSize: '18px', 
+            fontWeight: '800', 
+            color: '#ffffff',
+            letterSpacing: '1px'
+            }}>
+                DOCUMENTE SECURIZATE
+            </h1>
+            <p style={{ 
+                margin: '5px 0 0 0', 
+                fontSize: '13px', 
+                color: '#ddd6fe' // VIOLET DESCHIS (nu negru, nu gri)
+            }}>
+            Sursă: <span style={{ fontWeight: 'bold', color: '#a5b4fc' }}>{sourceName}</span>
+            </p>
         </div>
-        <HardDrive size={28} />
-      </div>
+        <HardDrive size={24} color="#ddd6fe" />
+    </div>
 
       {/* Zona de Vizualizare Conținut */}
       <div style={{
