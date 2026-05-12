@@ -1,63 +1,85 @@
-import { useState } from 'react';
-import { Send } from 'lucide-react';
-import type { Message } from '../types';
+import { useState, useEffect } from 'react';
+import { SendHorizonal, Paperclip } from 'lucide-react';
 
-export const ChatView = () => {
-  // Statul care ține lista de mesaje (Strongly Typed!)
-  const [messages, setMessages] = useState<Message[]>([
-    { id: '1', sender: 'Sistem', text: 'Conexiune securizată stabilită.', timestamp: '12:00', isSelf: false }
+interface ChatViewProps {
+  selectedContact: string;
+}
+
+export const ChatView = ({ selectedContact }: ChatViewProps) => {
+  const [messages, setMessages] = useState([
+    { id: '1', sender: 'Sistem', text: `Conexiune securizată stabilită cu ${selectedContact}.`, time: '12:00', isSelf: false },
   ]);
-  const [inputText, setInputText] = useState('');
+  const [newMessage, setNewMessage] = useState('');
 
-  const handleSend = () => {
-    if (!inputText.trim()) return;
+  useEffect(() => {
+    setMessages([
+      { id: '1', sender: 'Sistem', text: `Istoric conversație încărcat pentru ${selectedContact}.`, time: '12:00', isSelf: false },
+      { id: '2', sender: selectedContact, text: 'Salut! Cu ce te pot ajuta?', time: '12:01', isSelf: false }
+    ]);
+  }, [selectedContact]);
 
-    const newMessage: Message = {
-      id: crypto.randomUUID(), // Generăm un ID unic local
+  const handleSendMessage = () => {
+    if (!newMessage.trim()) return;
+    setMessages([...messages, {
+      id: crypto.randomUUID(),
       sender: 'Tu',
-      text: inputText,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      text: newMessage,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isSelf: true
-    };
-
-    setMessages([...messages, newMessage]);
-    setInputText(''); // Resetăm câmpul de text
+    }]);
+    setNewMessage('');
   };
 
   return (
-    <div className="flex flex-col h-full bg-white">
-      {/* Lista de mesaje - cu scroll automat */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+    <div style={{
+      backgroundImage: "url('/image_0.png')",
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      position: 'relative'
+    }}>
+      <div style={{ padding: '10px 30px', backgroundColor: 'rgba(255,255,255,0.8)', borderBottom: '1px solid #ddd', fontSize: '11px', fontWeight: 'bold', color: '#1e3a8a', textAlign: 'center' }}>
+        AGENT ACTIV: {selectedContact.toUpperCase()}
+      </div>
+
+      <div className="no-scrollbar" style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {messages.map((msg) => (
-          <div key={msg.id} className={`flex ${msg.isSelf ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[70%] p-3 rounded-2xl shadow-sm ${
-              msg.isSelf ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white text-slate-800 rounded-tl-none border'
-            }`}>
-              <p className="text-[10px] font-bold mb-1 opacity-70">{msg.sender}</p>
-              <p className="text-sm">{msg.text}</p>
-              <p className="text-[9px] text-right mt-1 opacity-50">{msg.timestamp}</p>
+          <div key={msg.id} style={{ 
+            display: 'flex', 
+            justifyContent: msg.isSelf ? 'flex-end' : 'flex-start',
+            marginRight: msg.isSelf ? '25px' : '0' // Muta mesajul albastru spre stanga
+          }}>
+            <div style={{
+              maxWidth: '65%',
+              padding: '12px 18px',
+              borderRadius: msg.isSelf ? '18px 18px 2px 18px' : '18px 18px 18px 2px',
+              backgroundColor: msg.isSelf ? '#2563eb' : '#f0f7ff', // Albastru foarte deschis pentru primite
+              color: msg.isSelf ? 'white' : '#1e293b',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+            }}>
+              {!msg.isSelf && <div style={{ fontSize: '9px', fontWeight: 'bold', marginBottom: '4px', color: '#64748b' }}>{msg.sender}</div>}
+              <div style={{ fontSize: '13px', lineHeight: '1.4' }}>{msg.text}</div>
+              <div style={{ fontSize: '9px', marginTop: '5px', textAlign: 'right', opacity: 0.6 }}>{msg.time}</div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Input de trimitere */}
-      <div className="p-4 border-t flex gap-2 bg-white">
+      <footer style={{ padding: '15px 25px', backgroundColor: 'white', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <Paperclip size={20} style={{ color: '#64748b', cursor: 'pointer' }} />
         <input 
-          type="text" 
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-          placeholder="Scrie un mesaj securizat..." 
-          className="flex-1 border rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+          placeholder="Scrie un mesaj securizat..."
+          style={{ flex: 1, padding: '12px 20px', borderRadius: '25px', border: '1px solid #cbd5e1', outline: 'none' }}
         />
-        <button 
-          onClick={handleSend}
-          className="bg-blue-600 text-white p-2 rounded-xl hover:bg-blue-700 transition-colors shadow-md"
-        >
-          <Send size={20} />
+        <button onClick={handleSendMessage} style={{ width: '45px', height: '45px', borderRadius: '50%', backgroundColor: '#2563eb', color: 'white', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <SendHorizonal size={20} />
         </button>
-      </div>
+      </footer>
     </div>
   );
 };

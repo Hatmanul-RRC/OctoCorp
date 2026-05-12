@@ -2,59 +2,102 @@ import { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { ChatView } from './components/ChatView';
-import { ChannelsView } from './components/ChannelsView'; // Modulul nou de fișiere
-import { LoginView } from './components/LoginView';       // Modulul de acces
-import type { User } from './types'; 
+import { LoginView } from './components/LoginView';
+import { ChannelsView } from './components/ChannelsView';
 
 function App() {
-  // 1. Statul pentru autentificare (esențial pentru securitatea OctoCorp)
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-
-  // 2. Statul pentru navigare SPA (Single Page Application)
   const [activeTab, setActiveTab] = useState<'Chat' | 'Canale'>('Chat');
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [selectedContact, setSelectedContact] = useState('Agent Alpha');
+  const [selectedChannel, setSelectedChannel] = useState('# general');
 
-  // Funcția de login care simulează alocarea rolurilor RBAC
   const handleLogin = (username: string) => {
-    const user: User = {
-      id: crypto.randomUUID(), // Generăm UUID local conform ADD
-      username: username,
-      roles: username.toLowerCase() === 'admin' ? ['Admin'] : ['Membru']
-    };
+    const roles = username.toLowerCase() === 'admin' ? ['Admin'] : ['Membru'];
+    const user = { username, roles };
+    localStorage.setItem('octocorp_user', JSON.stringify(user));
     setCurrentUser(user);
     setIsLoggedIn(true);
   };
 
-  // --- LOGICA DE REDARE (GATING) ---
-  // Dacă nu este logat, afișăm DOAR ecranul de Login
   if (!isLoggedIn || !currentUser) {
     return <LoginView onLogin={handleLogin} />;
   }
 
-  // Dacă este logat, afișăm interfața principală a consolei
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-900 overflow-hidden">
-      {/* Sidebar cu navigare și verificarea rolurilor pentru butonul de Admin */}
-      <Sidebar 
-        activeTab={activeTab} 
-        onTabChange={setActiveTab} 
-        userRoles={currentUser.roles} 
-      />
+    <div style={{
+      display: 'flex',
+      height: '100vh',
+      width: '100vw',
+      overflow: 'hidden',
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      fontFamily: 'sans-serif',
+      margin: 0,
+      padding: 0
+    }}>
+      {/* MODIFICARE: Injectăm un stil CSS scurt pentru a ascunde bara de scroll 
+        și a asigura spațierea corectă a mesajelor.
+      */}
+      <style>
+        {`
+          .no-scrollbar::-webkit-scrollbar {
+            display: none;
+          }
+          .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            padding-right: 40px !important; /* Împinge mesajele din dreapta mai la stânga */
+          }
+        `}
+      </style>
+      
+      {/* 1. Sidebar */}
+      <div style={{
+        width: '260px',
+        height: '100%',
+        backgroundColor: '#1e3a8a',
+        color: 'white',
+        flexShrink: 0,
+      }}>
+        <Sidebar 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab} 
+          userRoles={currentUser.roles}
+          onSelectContact={setSelectedContact}
+          selectedContact={selectedContact}
+          onSelectChannel={setSelectedChannel}
+          selectedChannel={selectedChannel}
+        />
+      </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header-ul care afișează identitatea și rolurile curente */}
+      {/* 2. Zona Principală */}
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        overflow: 'hidden',
+      }}>
+        
         <Header currentUser={currentUser} />
         
-        <main className="flex-1 overflow-hidden p-6">
+        <main style={{
+          flex: 1,
+          overflow: 'hidden',
+          position: 'relative',
+        }}>
           {activeTab === 'Chat' ? (
-            /* Modulul de Mesagerie Securizată */
-            <div className="h-full bg-white rounded-xl shadow-sm border overflow-hidden">
-              <ChatView />
+            /* MODIFICARE: ChatView va sta într-un container care aplică 
+               clasa "no-scrollbar" definită mai sus.
+            */
+            <div className="no-scrollbar" style={{ height: '100%', overflowY: 'auto' }}>
+                <ChatView selectedContact={selectedContact} />
             </div>
           ) : (
-            /* Modulul de Gestiune Fișiere (Canale) cu verificare permisiuni */
-            <div className="h-full bg-white rounded-xl shadow-sm border overflow-hidden">
-              <ChannelsView userRoles={currentUser.roles} />
+            <div className="no-scrollbar" style={{ height: '100%', overflowY: 'auto' }}>
+              <ChannelsView selectedChannel={selectedChannel} />
             </div>
           )}
         </main>

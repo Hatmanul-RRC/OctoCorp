@@ -1,54 +1,102 @@
-import { MessageSquare, Hash, ShieldAlert } from 'lucide-react';
+import { MessageSquare, Hash, Plus, Trash2 } from 'lucide-react';
 
-// Definim ce date poate primi Sidebar-ul (Props)
 interface SidebarProps {
   activeTab: 'Chat' | 'Canale';
   onTabChange: (tab: 'Chat' | 'Canale') => void;
-  userRoles: string[]; // Rolurile primite din App.tsx
+  userRoles: string[];
+  onSelectContact: (name: string) => void;
+  selectedContact: string;
 }
 
-export const Sidebar = ({ activeTab, onTabChange, userRoles }: SidebarProps) => {
+export const Sidebar = ({ activeTab, onTabChange, onSelectContact, selectedContact }: SidebarProps) => {
+  const contacts = ["Agent Alpha", "Agent Beta", "Agent Gamma"];
+
   return (
-    <aside className="w-64 h-screen bg-slate-900 text-white flex flex-col p-4 shadow-xl">
-      <div className="mb-10 px-2 text-2xl font-bold text-blue-500">OctoCorp</div>
+    <aside style={{ 
+      width: '100%', 
+      height: '100%', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      boxSizing: 'border-box',
+      backgroundColor: '#1e3a8a',
+      color: 'white'
+    }}>
+      {/* Logo */}
+      <div style={{ padding: '25px 0', fontSize: '22px', fontWeight: 'bold', textAlign: 'center' }}>OctoCorp</div>
       
-      <nav className="flex-1 space-y-2">
-        {/* Buton Chat */}
+      {/* Tab-uri principale */}
+      <div style={{ padding: '0 15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <button 
           onClick={() => onTabChange('Chat')}
-          className={`flex items-center space-x-3 w-full p-3 rounded-lg transition-all ${
-            activeTab === 'Chat' ? 'bg-blue-600 shadow-lg' : 'hover:bg-slate-800 text-slate-400'
-          }`}
+          style={{ 
+            width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', border: 'none', 
+            backgroundColor: activeTab === 'Chat' ? 'white' : 'rgba(255,255,255,0.05)', 
+            color: activeTab === 'Chat' ? '#1e3a8a' : 'white', cursor: 'pointer', borderRadius: '6px', fontWeight: '500'
+          }}
         >
-          <MessageSquare size={20} />
-          <span>Chat</span>
+          <MessageSquare size={18} /> Chat Privat
         </button>
 
-        {/* Buton Canale */}
         <button 
           onClick={() => onTabChange('Canale')}
-          className={`flex items-center space-x-3 w-full p-3 rounded-lg transition-all ${
-            activeTab === 'Canale' ? 'bg-blue-600 shadow-lg' : 'hover:bg-slate-800 text-slate-400'
-          }`}
+          style={{ 
+            width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', border: 'none', 
+            backgroundColor: activeTab === 'Canale' ? 'white' : 'rgba(255,255,255,0.05)', 
+            color: activeTab === 'Canale' ? '#1e3a8a' : 'white', cursor: 'pointer', borderRadius: '6px', fontWeight: '500'
+          }}
         >
-          <Hash size={20} />
-          <span>Canale</span>
+          <Hash size={18} /> Canale Grup
         </button>
+      </div>
 
-        {/* --- LOGICA RBAC --- */}
-        {/* Butonul de Admin apare DOAR dacă utilizatorul are rolul de 'Admin' */}
-        {userRoles.includes('Admin') && (
-          <div className="pt-10">
-            <p className="text-[10px] text-slate-500 font-bold uppercase px-3 mb-2">Administrare</p>
-            <button className="flex items-center space-x-3 w-full p-3 rounded-lg text-amber-400 hover:bg-slate-800 transition-all border border-amber-900/30">
-              <ShieldAlert size={20} />
-              <span className="font-bold">Panou Control</span>
-            </button>
-          </div>
+      {/* Zona de Contacte (Mijloc) */}
+      <div style={{ marginTop: '40px', padding: '0 15px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {activeTab === 'Chat' && (
+          <>
+            <div style={{ fontSize: '10px', opacity: 0.6, marginBottom: '15px', textAlign: 'center', fontWeight: 'bold', letterSpacing: '1px' }}>
+                CONVERSAȚII
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {contacts.map(name => (
+                <button 
+                  key={name} 
+                  onClick={() => onSelectContact(name)} 
+                  style={{ 
+                    width: '100%', textAlign: 'left', padding: '10px 15px', 
+                    backgroundColor: selectedContact === name ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.1)', 
+                    border: selectedContact === name ? '1px solid rgba(255,255,255,0.5)' : 'none', 
+                    color: 'white', cursor: 'pointer', borderRadius: '4px', fontSize: '14px'
+                  }}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+
+            {/* Zona de Acțiuni (Jos) */}
+            <div style={{ marginTop: 'auto', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button style={{ 
+                width: '100%', padding: '10px', border: '1px dashed rgba(255,255,255,0.4)', 
+                backgroundColor: 'transparent', color: '#60a5fa', cursor: 'pointer', borderRadius: '4px', 
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '13px'
+              }}>
+                <Plus size={16} /> Adaugă conversație
+              </button>
+
+              <button style={{ 
+                width: '100%', padding: '10px', border: '1px solid rgba(239, 68, 68, 0.2)', 
+                backgroundColor: 'rgba(239, 68, 68, 0.05)', color: '#f87171', cursor: 'pointer', borderRadius: '4px', 
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '13px'
+              }}>
+                <Trash2 size={16} /> Șterge conversație
+              </button>
+            </div>
+          </>
         )}
-      </nav>
-      
-      <div className="mt-auto p-2 text-[10px] text-slate-600 text-center border-t border-slate-800">
+      </div>
+
+      <div style={{ padding: '15px', fontSize: '10px', opacity: 0.4, textAlign: 'center' }}>
         Versiune OctoCorp v1.0.0-Stable
       </div>
     </aside>
